@@ -30,7 +30,7 @@ export class FileStore {
     try {
       this.rotateIfNeeded();
 
-      const logs = await this.loadAll();
+      const logs = this.readAllSync();
       logs.push(request);
       fs.writeFileSync(this.filePath, JSON.stringify(logs, null, 2), 'utf-8');
     } catch {
@@ -52,6 +52,11 @@ export class FileStore {
   }
 
   async loadAll(): Promise<FailedRequest[]> {
+    return this.readAllSync();
+  }
+
+  // Mutations must not yield between reading and writing the file.
+  private readAllSync(): FailedRequest[] {
     try {
       const content = fs.readFileSync(this.filePath, 'utf-8');
       return JSON.parse(content);
@@ -67,7 +72,7 @@ export class FileStore {
 
   async remove(id: string): Promise<boolean> {
     try {
-      const logs = await this.loadAll();
+      const logs = this.readAllSync();
       const filtered = logs.filter((log) => log.id !== id);
 
       if (filtered.length === logs.length) {
